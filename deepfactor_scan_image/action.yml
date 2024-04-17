@@ -10,9 +10,17 @@ inputs:
     required: true
 
 runs:
-  using: docker
-  image: docker://public.ecr.aws/deepfactor/df/runtime:latest
-  env:
-    DF_RUN_TOKEN: ${{ inputs.deepfactor_run_token }}
-    IMAGE: ${{ inputs.image }}
-  entrypoint: dfctl scan $IMAGE
+  using: composite
+  steps:
+    - name: Install dfctl
+      env:
+        DF_RUN_TOKEN: ${{ inputs.deepfactor_run_token }}
+      shell: bash
+      run: ${{ vars.DEEPFACTOR_INSTALL_DFCTL }}
+
+    - name: Deepfactor scan
+      env:
+        DF_RUN_TOKEN: ${{ inputs.deepfactor_run_token }}
+        IMAGE: ${{ inputs.image }}
+      shell: bash
+      run: dfctl scan $IMAGE

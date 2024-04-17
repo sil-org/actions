@@ -13,6 +13,6 @@ runs:
   using: docker
   image: public.ecr.aws/deepfactor/df/runtime:latest
   env:
-    DF_RUN_TOKEN: ${{ secrets.deepfactor_run_token }}
+    DF_RUN_TOKEN: ${{ inputs.deepfactor_run_token }}
     IMAGE: ${{ inputs.image }}
   entrypoint: dfctl scan $IMAGE

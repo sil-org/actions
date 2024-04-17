@@ -36,8 +36,8 @@ runs:
   - name: Configure AWS credentials
     uses: aws-actions/configure-aws-credentials@v4
     with:
-      aws-access-key-id: ${{ secrets.aws-access-key-id }}
-      aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+      aws-access-key-id: ${{ inputs.aws-access-key-id }}
+      aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
       aws-region: ${{ inputs.aws-region }}
 
   - name: Login to AWS ECR
@@ -78,8 +78,8 @@ runs:
   - name: Deploy to ECS
     id: deploy-image
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.aws-access-key-id }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.aws-secret-access-key }}
+      AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+      AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
       AWS_REGION: ${{ inputs.aws-region }}
       AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
       CLUSTER: ${{ inputs.cluster }}

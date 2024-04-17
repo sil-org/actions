@@ -1,0 +1,18 @@
+name: Deepfactor scan image
+description: Scan a docker image using Deepfactor
+
+inputs:
+  image:
+    description: The name of the image to deploy, should already be built
+    required: true
+  deepfactor_run_token:
+    description: The deepfactor run token
+    required: true
+
+runs:
+  using: docker
+  image: public.ecr.aws/deepfactor/df/runtime:latest
+  env:
+    DF_RUN_TOKEN: ${{ secrets.deepfactor_run_token }}
+    IMAGE: ${{ inputs.image }}
+  entrypoint: dfctl scan $IMAGE

@@ -1,0 +1,91 @@
+name: ECS Deploy
+description: Deploy to AWS ECS
+inputs:
+  aws-region:
+    description: "The aws region to deploy to (default: us-east-1)"
+    default: us-east-1
+  cluster:
+    description: The ECS cluster to deploy to
+    required: true
+  service:
+    description: The ECS service to deploy to
+    required: true
+  timeout:
+    description: "The timeout in seconds for ecs-deploy (default: 300)"
+    default: "300"
+  max-definitions:
+    description: "The maximum number of task definitions (default: 10)"
+    default: "10"
+  image:
+    description: The name of the image to deploy, should already be built
+    required: true
+  tags:
+    description: A space separated list of tags for image to deploy to ECS, the last tag is the one that will be deployed
+  environment:
+    description: The environment to deploy to, e.g. prod, stg, dev, test
+  aws-access-key-id:
+    description: The AWS access key ID
+    required: true
+  aws-secret-access-key:
+    description: The AWS secret access key
+    required: true
+
+runs:
+  using: composite
+  steps:
+  - name: Configure AWS credentials
+    uses: aws-actions/configure-aws-credentials@v4
+    with:
+      aws-access-key-id: ${{ secrets.aws-access-key-id }}
+      aws-secret-access-key: ${{ secrets.aws-secret-access-key }}
+      aws-region: ${{ inputs.aws-region }}
+
+  - name: Login to AWS ECR
+    id: login-ecr
+    uses: aws-actions/amazon-ecr-login@v2
+
+  - name: Push Images to AWS
+    id: push-image
+    env:
+      IMAGE: ${{ inputs.image }}
+      REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      TAGS: ${{ inputs.tags }}
+      ENVIRONMENT: ${{ inputs.environment }}
+    shell: bash
+    run: |
+      if [ -n "$ENVIRONMENT" ]; then
+          ENVIRONMENT="-$ENVIRONMENT"
+      fi
+
+      for TAG in $TAGS; do
+          if [ -n "$TAG" ]; then
+              TAG=":$TAG"
+          fi
+
+          IMAGE_TO_DEPLOY="$REGISTRY/${IMAGE}${ENVIRONMENT}${TAG}"
+          docker tag "$IMAGE" "$IMAGE_TO_DEPLOY"
+          docker push "$IMAGE_TO_DEPLOY"
+      done
+
+      echo "image_to_deploy=$IMAGE_TO_DEPLOY" >> $GITHUB_OUTPUT
+
+  - name: Install ecs-deploy
+    shell: bash
+    run: |
+      curl -o /usr/local/bin/ecs-deploy https://raw.githubusercontent.com/silinternational/ecs-deploy/master/ecs-deploy
+      chmod +x /usr/local/bin/ecs-deploy
+
+  - name: Deploy to ECS
+    id: deploy-image
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.aws-access-key-id }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.aws-secret-access-key }}
+      AWS_REGION: ${{ inputs.aws-region }}
+      AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+      CLUSTER: ${{ inputs.cluster }}
+      SERVICE: ${{ inputs.service }}
+      TIMEOUT: ${{ inputs.timeout }}
+      MAX_DEFINITIONS: ${{ inputs.max-definitions }}
+      IMAGE: ${{ steps.push-image.outputs.image_to_deploy }}
+    shell: bash
+    run: ecs-deploy --cluster $CLUSTER --service-name $SERVICE --image $IMAGE --timeout $TIMEOUT --max-definitions $MAX_DEFINITIONS

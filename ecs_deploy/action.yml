@@ -72,7 +72,7 @@ runs:
   - name: Install ecs-deploy
     shell: bash
     run: |
-      curl -o /usr/local/bin/ecs-deploy https://raw.githubusercontent.com/silinternational/ecs-deploy/master/ecs-deploy
+      curl -o /usr/local/bin/ecs-deploy https://raw.githubusercontent.com/sil-org/ecs-deploy/master/ecs-deploy
       chmod +x /usr/local/bin/ecs-deploy
 
   - name: Deploy to ECS
